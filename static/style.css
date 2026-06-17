@@ -1,0 +1,322 @@
+@import url("https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700&family=Share+Tech+Mono&display=swap");
+
+:root {
+    --bg0: #04060f;
+    --bg1: #0b1225;
+    --line: rgba(82, 186, 255, 0.18);
+    --panel: rgba(8, 16, 34, 0.72);
+    --panel-border: rgba(82, 186, 255, 0.35);
+    --ink: #d9ebff;
+    --muted: #8ea6c9;
+    --accent: #00e1ff;
+    --accent-soft: rgba(0, 225, 255, 0.4);
+    --danger: #ff5d85;
+    --ok: #50f2a8;
+    --shadow: 0 14px 48px rgba(0, 10, 30, 0.55);
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    color: var(--ink);
+    font-family: "Share Tech Mono", "Noto Sans TC", sans-serif;
+    background: radial-gradient(circle at 20% 10%, #121f3d 0%, var(--bg1) 35%, var(--bg0) 78%);
+    padding: 28px 16px;
+    overflow-x: hidden;
+}
+
+.bg-grid,
+.bg-glow {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: -1;
+}
+
+.bg-grid {
+    background-image:
+        linear-gradient(var(--line) 1px, transparent 1px),
+        linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: radial-gradient(circle at center, black 35%, transparent 95%);
+}
+
+.bg-glow {
+    background:
+        radial-gradient(circle at 12% 20%, rgba(43, 255, 230, 0.22), transparent 34%),
+        radial-gradient(circle at 85% 15%, rgba(0, 150, 255, 0.22), transparent 30%),
+        radial-gradient(circle at 50% 100%, rgba(130, 100, 255, 0.2), transparent 40%);
+    animation: pulse 7s ease-in-out infinite alternate;
+}
+
+.wrap {
+    max-width: 1080px;
+    margin: 0 auto;
+}
+
+.hero {
+    background: linear-gradient(145deg, rgba(13, 25, 50, 0.95), rgba(7, 14, 31, 0.8));
+    border-radius: 18px;
+    box-shadow: var(--shadow);
+    padding: 22px;
+    margin-bottom: 16px;
+    border: 1px solid var(--panel-border);
+    position: relative;
+    overflow: hidden;
+}
+
+.hero::after {
+    content: "";
+    position: absolute;
+    top: -120%;
+    left: -30%;
+    width: 65%;
+    height: 320%;
+    transform: rotate(22deg);
+    background: linear-gradient(
+        to right,
+        transparent,
+        rgba(127, 255, 255, 0.11),
+        transparent
+    );
+    animation: sweep 5.5s linear infinite;
+}
+
+.hero-top {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+    flex-wrap: wrap;
+}
+
+.chip {
+    margin: 0;
+    padding: 4px 8px;
+    border-radius: 999px;
+    font-size: 0.74rem;
+    letter-spacing: 0.14em;
+    color: #a8f5ff;
+    border: 1px solid rgba(127, 243, 255, 0.5);
+    background: rgba(0, 140, 180, 0.2);
+    box-shadow: 0 0 18px rgba(0, 200, 255, 0.2) inset;
+}
+
+h1 {
+    margin: 0;
+    font-size: clamp(1.3rem, 3vw, 2rem);
+    letter-spacing: 0.08em;
+    font-family: "Orbitron", "Noto Sans TC", sans-serif;
+    text-transform: uppercase;
+}
+
+.meta {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.92rem;
+}
+
+.market-panel {
+    margin-bottom: 16px;
+}
+
+.market-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin: 0 4px 10px;
+}
+
+h2 {
+    margin: 0;
+    font-size: 1rem;
+    font-family: "Orbitron", "Noto Sans TC", sans-serif;
+    letter-spacing: 0.08em;
+    color: #b8e9ff;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+}
+
+.card {
+    background: linear-gradient(165deg, rgba(10, 20, 42, 0.92), rgba(6, 14, 30, 0.9));
+    border-radius: 14px;
+    border: 1px solid rgba(105, 170, 255, 0.35);
+    box-shadow: var(--shadow);
+    padding: 14px;
+    transform: translateY(8px);
+    opacity: 0;
+    animation: rise 0.55s ease forwards;
+    transition: transform 0.22s ease, border-color 0.22s ease, box-shadow 0.22s ease;
+}
+
+.card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(127, 243, 255, 0.7);
+    box-shadow: 0 16px 36px rgba(8, 23, 55, 0.6), 0 0 0 1px rgba(127, 243, 255, 0.2) inset;
+}
+
+.card:nth-child(2) { animation-delay: 0.05s; }
+.card:nth-child(3) { animation-delay: 0.1s; }
+.card:nth-child(4) { animation-delay: 0.15s; }
+.card:nth-child(5) { animation-delay: 0.2s; }
+.card:nth-child(6) { animation-delay: 0.25s; }
+
+.name {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #9ab4da;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+.rate {
+    margin: 10px 0;
+    font-size: 1.9rem;
+    font-weight: 700;
+    line-height: 1;
+    font-family: "Orbitron", "Noto Sans TC", sans-serif;
+}
+
+.rate-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.chart-arrow-toggle {
+    display: none;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1px solid rgba(127, 243, 255, 0.45);
+    background: rgba(10, 28, 52, 0.85);
+    color: #aef3ff;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 0;
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease;
+}
+
+.chart-arrow-toggle.open {
+    transform: rotate(180deg);
+    border-color: rgba(127, 243, 255, 0.75);
+}
+
+.ok {
+    color: var(--ok);
+    text-shadow: 0 0 12px rgba(80, 242, 168, 0.35);
+}
+
+.bad {
+    color: var(--danger);
+    text-shadow: 0 0 12px rgba(255, 93, 133, 0.3);
+}
+
+.tiny {
+    margin: 0;
+    color: var(--muted);
+    font-size: 0.8rem;
+    word-break: break-word;
+}
+
+.sparkline-wrap {
+    margin: 4px 0 8px;
+}
+
+.sparkline {
+    width: 100%;
+    height: 66px;
+    display: block;
+    border: 1px solid rgba(127, 243, 255, 0.2);
+    border-radius: 8px;
+    background:
+        linear-gradient(to bottom, rgba(14, 34, 70, 0.8), rgba(8, 19, 40, 0.65));
+}
+
+.sparkline-line {
+    fill: none;
+    stroke: #7ff3ff;
+    stroke-width: 2.2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    filter: drop-shadow(0 0 4px rgba(127, 243, 255, 0.4));
+}
+
+.sparkline-dot {
+    fill: #50f2a8;
+    filter: drop-shadow(0 0 5px rgba(80, 242, 168, 0.45));
+}
+
+.chart-meta {
+    margin-top: 4px;
+}
+
+.mobile-chart-panel {
+    display: none;
+}
+
+.mobile-chart-panel.active {
+    display: block;
+}
+
+@keyframes rise {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes pulse {
+    from { opacity: 0.55; }
+    to { opacity: 1; }
+}
+
+@keyframes sweep {
+    from { transform: translateX(-18%) rotate(22deg); }
+    to { transform: translateX(220%) rotate(22deg); }
+}
+
+@media (max-width: 640px) {
+    body {
+        padding: 18px 12px;
+    }
+
+    .hero {
+        padding: 16px;
+    }
+
+    .rate {
+        font-size: 1.6rem;
+        margin: 8px 0;
+    }
+
+    .market-head {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .chart-arrow-toggle {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+    }
+
+    .sparkline-wrap {
+        margin: 2px 0 6px;
+    }
+
+    .chart-meta {
+        font-size: 0.74rem;
+        margin-top: 3px;
+    }
+}

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>TopCashback DE / UK 監控站</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <div class="bg-grid" aria-hidden="true"></div>
+    <div class="bg-glow" aria-hidden="true"></div>
+    <main class="wrap">
+        <section class="hero">
+            <div class="hero-top">
+                <h1>TopCashback DE / UK </h1>
+            </div>
+            <p class="meta" id="updated">雙市場讀取中...</p>
+            <p class="meta" id="interval"></p>
+        </section>
+
+        <section class="market-panel">
+            <div class="market-head">
+                <h2>DE</h2>
+            </div>
+            <section id="cards-de" class="grid"></section>
+        </section>
+
+        <section class="market-panel">
+            <div class="market-head">
+                <h2>UK</h2>
+            </div>
+            <section id="cards-uk" class="grid"></section>
+        </section>
+    </main>
+
+    <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

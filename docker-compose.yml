@@ -1,0 +1,13 @@
+services:
+  tcb-monitor:
+    build: .
+    container_name: tcb-monitor
+    ports:
+      - "5001:5001"
+    environment:
+      TCB_POLL_SECONDS: "3600"
+      TCB_HISTORY_LIMIT: "200"
+      PORT: "5001"
+    volumes:
+      - ./history.db:/app/history.db
+    restart: unless-stopped
