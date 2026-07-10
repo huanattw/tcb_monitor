@@ -25,14 +25,7 @@ MARKET_CONFIG = {
         "base_url": "https://www.topcashback.de",
         "accept_language": "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7",
         "aff_xpath": '//*[@id="ctl00_ctl29_ctl08_hypMenuItem"]',
-        "merchants": [
-            "cyberghostvpn",
-            "surfshark",
-            "f-secure-internet-security-and-vpn",
-            "nordvpn",
-            "express-vpn",
-            "purevpn",
-        ],
+        "merchants": os.environ.get("TCB_DE_MERCHANTS").split(","),
     },
     "uk": {
         "name": "TopCashback UK",
@@ -40,9 +33,15 @@ MARKET_CONFIG = {
         "accept_language": "en-GB,en;q=0.9",
         "rate_xpath": '//*[@id="ctl00_BodyMain_MicroFrontEndControl_pnlContent"]/div[3]/div/div[3]/div[4]/div/div[2]/span',
         "aff_xpath": '//*[@id="ctl00_ctl29_ctl07_hypMenuItem"]',
-        "merchants": [
-            "cyberghost-vpn","surfshark","nordvpn"
-        ],
+        "merchants": os.environ.get("TCB_UK_MERCHANTS").split(","),
+    },
+    "us": {
+        "name": "TopCashback US",
+        "base_url": "https://www.topcashback.com",
+        "accept_language": "en-GB,en;q=0.9",
+        "rate_xpath": '//*[@id="ctl00_BodyMain_MicroFrontEndControl_pnlContent"]/div[3]/div/div[3]/div[4]/div/div[2]/span',
+        "aff_xpath": '//*[@id="ctl00_ctl16_ctl07_hypMenuItem"]',
+        "merchants": os.environ.get("TCB_US_MERCHANTS").split(","),
     },
 }
 
@@ -70,6 +69,8 @@ class TopCashbackClient:
 
     @staticmethod
     def _extract_by_regex(html):
+        # Any location has the exactly same tag of cachback rate
+        # It is used when the rate xpath didn't defined or work
         match = re.search(
             r'class="merch-cat__rate">\s*(?P<rate>\d+(?:,\d+)?%)\s*<',
             html,
