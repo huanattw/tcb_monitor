@@ -2,6 +2,8 @@ services:
   tcb-monitor:
     build: .
     container_name: tcb-monitor
+    env_file:
+      - .env
     ports:
       - "5001:5001"
     environment:
