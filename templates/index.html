@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>TopCashback DE / UK 監控站</title>
+    <title>TopCashback DE / UK / US 監控站</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -12,7 +12,7 @@
     <main class="wrap">
         <section class="hero">
             <div class="hero-top">
-                <h1>TopCashback DE / UK </h1>
+                <h1>TopCashback DE / UK / US</h1>
             </div>
             <p class="meta" id="updated">雙市場讀取中...</p>
             <p class="meta" id="interval"></p>
@@ -21,6 +21,7 @@
         <section class="market-panel">
             <div class="market-head">
                 <h2>DE</h2>
+                <p class="meta" id="updated-de"></p>
             </div>
             <section id="cards-de" class="grid"></section>
         </section>
@@ -28,8 +29,17 @@
         <section class="market-panel">
             <div class="market-head">
                 <h2>UK</h2>
+                <p class="meta" id="updated-uk"></p>
             </div>
             <section id="cards-uk" class="grid"></section>
+        </section>
+
+        <section class="market-panel">
+            <div class="market-head">
+                <h2>US</h2>
+                <p class="meta" id="updated-us"></p>
+            </div>
+            <section id="cards-us" class="grid"></section>
         </section>
     </main>
 

@@ -22,15 +22,21 @@ function render(data) {
     const markets = data.markets || {};
     const deData = markets.de || null;
     const ukData = markets.uk || null;
-    const updatedText = [deData?.last_checked_local, ukData?.last_checked_local]
+    const usData = markets.us || null;
+    const updatedText = [
+        deData?.last_checked_local,
+        ukData?.last_checked_local,
+        usData?.last_checked_local,
+    ]
         .filter(Boolean)
         .join(' | ') || '尚未抓取';
 
-    updated.textContent = '最後更新 (DE | UK): ' + updatedText;
+    updated.textContent = '最後更新 (DE | UK | US): ' + updatedText;
     interval.textContent = '輪詢間隔: ' + data.poll_interval_seconds + ' 秒';
 
     renderMarket('de', deData);
     renderMarket('uk', ukData);
+    renderMarket('us', usData);
     initMobileChartToggles();
 }
 
@@ -51,6 +57,7 @@ function renderMarket(marketCode, marketData) {
         return;
     }
 
+    marketUpdated.textContent = marketData.last_checked_local || '尚未抓取';
     const marketAffData = getMarketAffData(marketCode, marketData.results || []);
 
     cards.innerHTML = renderMarketAffCard(
@@ -92,6 +99,9 @@ function getCurrencyUnit(marketCode) {
     }
     if (code === 'de') {
         return '€';
+    }
+    if (code === 'us') {
+        return '$';
     }
     return '';
 }
