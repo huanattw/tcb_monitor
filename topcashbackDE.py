@@ -12,6 +12,11 @@ from datetime import datetime, timezone
 from flask import Flask, jsonify, render_template, request
 
 
+POLL_INTERVAL_SECONDS = 3600
+HISTORY_LIMIT = 200
+PORT = 5001
+
+
 def load_lxml_html_module():
     try:
         return importlib.import_module("lxml.html")
@@ -25,7 +30,14 @@ MARKET_CONFIG = {
         "base_url": "https://www.topcashback.de",
         "accept_language": "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7",
         "aff_xpath": '//*[@id="ctl00_ctl29_ctl08_hypMenuItem"]',
-        "merchants": os.environ.get("TCB_DE_MERCHANTS").split(","),
+        "merchants": [
+            "cyberghostvpn",
+            "surfshark",
+            "f-secure-internet-security-and-vpn",
+            "nordvpn",
+            "express-vpn",
+            "purevpn",
+        ],
     },
     "uk": {
         "name": "TopCashback UK",
@@ -33,7 +45,13 @@ MARKET_CONFIG = {
         "accept_language": "en-GB,en;q=0.9",
         "rate_xpath": '//*[@id="ctl00_BodyMain_MicroFrontEndControl_pnlContent"]/div[3]/div/div[3]/div[4]/div/div[2]/span',
         "aff_xpath": '//*[@id="ctl00_ctl29_ctl07_hypMenuItem"]',
-        "merchants": os.environ.get("TCB_UK_MERCHANTS").split(","),
+        "merchants": [
+            "cyberghost-vpn",
+            "surfshark",
+            "nordvpn",
+            "expressvpn-uk",
+            "purevpn",
+        ],
     },
     "us": {
         "name": "TopCashback US",
@@ -41,7 +59,13 @@ MARKET_CONFIG = {
         "accept_language": "en-GB,en;q=0.9",
         "rate_xpath": '//*[@id="ctl00_BodyMain_MicroFrontEndControl_pnlContent"]/div[3]/div/div[3]/div[4]/div/div[2]/span',
         "aff_xpath": '//*[@id="ctl00_ctl16_ctl07_hypMenuItem"]',
-        "merchants": os.environ.get("TCB_US_MERCHANTS").split(","),
+        "merchants": [
+            "cyberghost-vpn",
+            "surfshark",
+            "nordvpn",
+            "expressvpn",
+            "purevpn",
+        ],
     },
 }
 
@@ -552,8 +576,8 @@ def poll_once(client, merchants):
 
 
 def build_app():
-    poll_interval_seconds = int(os.getenv("TCB_POLL_SECONDS", "300"))
-    history_limit = int(os.getenv("TCB_HISTORY_LIMIT", "200"))
+    poll_interval_seconds = POLL_INTERVAL_SECONDS
+    history_limit = HISTORY_LIMIT
     monitors = {
         code: MonitorStore(
             market_code=code,
@@ -644,5 +668,4 @@ app = build_app()
 
 
 if __name__ == "__main__":
-    port = int(os.getenv("PORT", "5001"))
-    app.run(host="0.0.0.0", port=port, debug=False)
+    app.run(host="0.0.0.0", port=PORT, debug=False)

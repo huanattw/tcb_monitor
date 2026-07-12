@@ -1,1 +1,6 @@
-./ni
+.env
+.DS_Store
+__pycache__/
+*.py[cod]
+history.db
+history.db.deploy-backup

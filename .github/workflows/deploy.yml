@@ -1,0 +1,69 @@
+name: Deploy to VPS
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: production-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: Deploy production
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 15
+
+    steps:
+      - name: Configure SSH
+        env:
+          VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$VPS_SSH_KEY" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/known_hosts
+
+      - name: Deploy pushed commit
+        env:
+          VPS_HOST: ${{ secrets.VPS_HOST }}
+          VPS_PORT: ${{ secrets.VPS_PORT }}
+          VPS_USER: ${{ secrets.VPS_USER }}
+          VPS_DEPLOY_PATH: ${{ secrets.VPS_DEPLOY_PATH }}
+        run: |
+          ssh -i ~/.ssh/id_ed25519 \
+            -p "${VPS_PORT:-22}" \
+            -o BatchMode=yes \
+            "$VPS_USER@$VPS_HOST" \
+            bash -s -- "$VPS_DEPLOY_PATH" "$GITHUB_SHA" <<'DEPLOY'
+          set -Eeuo pipefail
+
+          deploy_path=$1
+          commit_sha=$2
+
+          cd "$deploy_path"
+          if [ -f history.db ]; then
+            cp -p history.db history.db.deploy-backup
+          fi
+
+          git fetch --prune origin main
+          git checkout main
+          git reset --hard "$commit_sha"
+
+          if [ -f history.db.deploy-backup ]; then
+            mv -f history.db.deploy-backup history.db
+          fi
+
+          docker compose config --quiet
+          docker compose up -d --build --remove-orphans
+          docker compose ps
+          docker image prune -f
+          DEPLOY
