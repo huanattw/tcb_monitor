@@ -68,7 +68,23 @@ MARKET_CONFIG = {
         "merchants": [
             "cyberghost-vpn",
             "surfshark",
-            "nordvpn",
+            "expressvpn",
+            "purevpn",
+        ],
+    },
+    "it": {
+        "name": "TopCashback IT",
+        "currency": "€",
+        "base_url": "https://topcashback.it",
+        "accept_language": "en-GB,en;q=0.9",
+        "rate_xpath": '//*[@id="ctl00_BodyMain_MicroFrontEndControl_pnlContent"]/div[3]/div/div[3]/div[4]/div/div[2]/span',
+        "aff_xpath": [
+            '//*[@id="ctl00_ctl15_ctl03_hypMenuItem"]',
+            '//a[contains(@href, "/account/invita-un-amico/")]',
+        ],
+        "merchants": [
+            "cyberghost-vpn",
+            "surfshark",
             "expressvpn",
             "purevpn",
         ],
@@ -165,7 +181,7 @@ class TopCashbackClient:
 
         # Fallback for referral links when IDs or layout change.
         fallback = re.search(
-            r'href="[^"]*(?:freunde-werben-freunde|tell-a-friend|refer-a-friend)[^"]*"[^>]*>(?P<text>.*?)</a>',
+            r'href="[^"]*(?:freunde-werben-freunde|tell-a-friend|refer-a-friend|invita-un-amico)[^"]*"[^>]*>(?P<text>.*?)</a>',
             html,
             re.IGNORECASE | re.DOTALL,
         )
