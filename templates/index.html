@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>TopCashback {{ markets | map(attribute='code') | map('upper') | join(' / ') }} 監控站</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='20260715-dim-chart') }}">
 </head>
 <body>
 <div class="bg-grid" aria-hidden="true"></div>
@@ -28,6 +28,6 @@
   {% endfor %}
 </main>
 
-<script src="{{ url_for('static', filename='app.js', v='20260715-startup-refresh') }}"></script>
+<script src="{{ url_for('static', filename='app.js', v='20260715-chart-overlay') }}"></script>
 </body>
 </html>

@@ -42,7 +42,6 @@ function render(data) {
         markets[code] || null,
         marketConfig[code]?.currency || ''
     ));
-    initMobileChartToggles();
 }
 
 function sanitizeForId(text) {
@@ -79,15 +78,13 @@ function renderMarket(marketCode, marketData, currencyUnit = '') {
             ? item.history_points.filter((x) => Number.isFinite(x))
             : [];
         const chartId = `chart-${marketCode}-${index}-${sanitizeForId(item.merchant)}`;
-        const hasChart = historyPoints.length >= 2;
         return `
             <article class="card">
                 <p class="name">${escapeHtml(item.merchant)}</p>
-                <div class="rate-row">
-                    <p class="rate ${rateClass}">${escapeHtml(rateText)}</p>
-                    ${renderRateArrowToggle(hasChart, chartId)}
+                <div class="rate-chart-stack">
+                    ${renderSparkline(historyPoints, chartId, '%')}
+                    <p class="rate rate-overlay ${rateClass}">${escapeHtml(rateText)}</p>
                 </div>
-                ${renderSparkline(historyPoints, chartId, '%')}
                 <p class="tiny">上次高點: ${escapeHtml(highRate)} (${escapeHtml(highTime)})</p>
             </article>
         `;
@@ -185,25 +182,16 @@ function getMarketAffData(unit, results) {
 
 function renderMarketAffCard(marketCode, affText, historyPoints, highText, highTime, unit) {
     const chartId = `aff-chart-${sanitizeForId(marketCode)}`;
-    const hasChart = Array.isArray(historyPoints) && historyPoints.length >= 2;
     return `
         <article class="card">
             <p class="name">${escapeHtml(marketCode.toUpperCase())} AFF</p>
-            <div class="rate-row">
-                <p class="rate ok">${escapeHtml(affText)}</p>
-                ${renderRateArrowToggle(hasChart, chartId)}
+            <div class="rate-chart-stack">
+                ${renderSparkline(historyPoints, chartId, unit)}
+                <p class="rate rate-overlay ok">${escapeHtml(affText)}</p>
             </div>
-            ${renderSparkline(historyPoints, chartId, unit)}
             <p class="tiny">上次高點: ${escapeHtml(highText)} (${escapeHtml(highTime)})</p>
         </article>
     `;
-}
-
-function renderRateArrowToggle(hasChart, chartId) {
-    if (!hasChart) {
-        return '';
-    }
-    return `<button type="button" class="chart-arrow-toggle" data-target="${chartId}" aria-label="展開折線圖" aria-expanded="false">▾</button>`;
 }
 
 function renderSparkline(points, chartId, unit = '%') {
@@ -211,12 +199,7 @@ function renderSparkline(points, chartId, unit = '%') {
         return '<p class="tiny">折線圖資料不足</p>';
     }
 
-    const mobileView = window.matchMedia('(max-width: 640px)').matches;
-    if (mobileView) {
-        return renderMobileSparkline(points, chartId, unit);
-    }
-
-    const visiblePoints = mobileView ? points.slice(-12) : points;
+    const visiblePoints = points;
     const width = 240;
     const height = 64;
     const padding = 6;
@@ -242,70 +225,6 @@ function renderSparkline(points, chartId, unit = '%') {
             <p class="tiny chart-meta">低 ${min.toFixed(1)} ${escapeHtml(unit)} | 高 ${max.toFixed(1)} ${escapeHtml(unit)}</p>
         </div>
     `;
-}
-
-function renderMobileSparkline(points, chartId, unit = '%') {
-    const visiblePoints = points.slice(-100).reverse();
-    const min = Math.min(...visiblePoints);
-    const max = Math.max(...visiblePoints);
-    const width = 180;
-    const height = 52;
-    const padding = 5;
-    const ascPoints = visiblePoints.slice().reverse();
-    const range = (max - min) || 1;
-
-    const coords = ascPoints.map((value, index) => {
-        const x = padding + (index * (width - padding * 2)) / (ascPoints.length - 1);
-        const y = padding + ((max - value) * (height - padding * 2)) / range;
-        return { x, y };
-    });
-
-    const polyline = coords.map((p) => `${p.x.toFixed(2)},${p.y.toFixed(2)}`).join(' ');
-    const last = coords[coords.length - 1];
-
-    return `
-        <div id="${chartId}" class="mobile-chart-panel" aria-label="歷史回饋折線圖">
-            <div class="sparkline-wrap">
-                <svg class="sparkline" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet">
-                    <polyline class="sparkline-line" points="${polyline}"></polyline>
-                    <circle class="sparkline-dot" cx="${last.x.toFixed(2)}" cy="${last.y.toFixed(2)}" r="2.8"></circle>
-                </svg>
-            </div>
-            <p class="tiny chart-meta">低 ${min.toFixed(1)} ${escapeHtml(unit)} | 高 ${max.toFixed(1)} ${escapeHtml(unit)}</p>
-        </div>
-    `;
-}
-
-function initMobileChartToggles() {
-    const toggles = document.querySelectorAll('.chart-arrow-toggle');
-    toggles.forEach((button) => {
-        if (button.dataset.bound === '1') {
-            return;
-        }
-        button.dataset.bound = '1';
-
-        const targetId = button.dataset.target;
-        const panel = document.getElementById(targetId);
-        if (!panel) {
-            return;
-        }
-
-        const applyState = (show) => {
-            if (!panel) {
-                return;
-            }
-            panel.classList.toggle('active', show);
-            button.classList.toggle('open', show);
-            button.setAttribute('aria-expanded', show ? 'true' : 'false');
-        };
-
-        button.addEventListener('click', () => {
-            const nextState = !panel.classList.contains('active');
-            applyState(nextState);
-        });
-
-        applyState(false);
-    });
 }
 
 async function boot() {

@@ -123,32 +123,19 @@ h2 {
   letter-spacing: -0.01em;
 }
 
-.rate-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
+.rate-chart-stack {
+  position: relative;
+  min-height: 86px;
+  margin-top: 8px;
 }
 
-.chart-arrow-toggle {
-  display: none;
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: none;
-  color: var(--muted);
-  font-size: 0.9rem;
-  line-height: 1;
-  padding: 0;
-  cursor: pointer;
-  transition: transform 0.2s ease, border-color 0.2s ease;
-}
-
-.chart-arrow-toggle.open {
-  transform: rotate(180deg);
-  border-color: var(--accent);
-  color: var(--accent);
+.rate-overlay {
+  position: absolute;
+  z-index: 1;
+  top: 8px;
+  left: 0;
+  margin: 0;
+  text-shadow: 0 1px 8px var(--panel), 0 1px 8px var(--panel);
 }
 
 .ok {
@@ -167,7 +154,7 @@ h2 {
 }
 
 .sparkline-wrap {
-  margin: 6px 0 10px;
+  margin: 0 0 10px;
 }
 
 .sparkline {
@@ -185,11 +172,13 @@ h2 {
   stroke-width: 1.6;
   stroke-linecap: round;
   stroke-linejoin: round;
+  opacity: 0.38;
   filter: none;
 }
 
 .sparkline-dot {
   fill: var(--ok);
+  opacity: 0.55;
   filter: none;
 }
 
@@ -197,12 +186,8 @@ h2 {
   margin-top: 6px;
 }
 
-.mobile-chart-panel {
-  display: none;
-}
-
-.mobile-chart-panel.active {
-  display: block;
+.rate-chart-stack > .tiny {
+  padding-top: 48px;
 }
 
 @media (max-width: 640px) {
@@ -224,15 +209,8 @@ h2 {
     align-items: flex-start;
   }
 
-  .chart-arrow-toggle {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-  }
-
   .sparkline-wrap {
-    margin: 4px 0 8px;
+    margin: 0 0 8px;
   }
 
   .chart-meta {
