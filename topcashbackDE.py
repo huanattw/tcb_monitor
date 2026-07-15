@@ -27,6 +27,7 @@ def load_lxml_html_module():
 MARKET_CONFIG = {
     "de": {
         "name": "TopCashback DE",
+        "currency": "€",
         "base_url": "https://www.topcashback.de",
         "accept_language": "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7",
         "aff_xpath": '//*[@id="ctl00_ctl29_ctl08_hypMenuItem"]',
@@ -41,6 +42,7 @@ MARKET_CONFIG = {
     },
     "uk": {
         "name": "TopCashback UK",
+        "currency": "£",
         "base_url": "https://www.topcashback.co.uk",
         "accept_language": "en-GB,en;q=0.9",
         "rate_xpath": '//*[@id="ctl00_BodyMain_MicroFrontEndControl_pnlContent"]/div[3]/div/div[3]/div[4]/div/div[2]/span',
@@ -55,6 +57,7 @@ MARKET_CONFIG = {
     },
     "us": {
         "name": "TopCashback US",
+        "currency": "$",
         "base_url": "https://www.topcashback.com",
         "accept_language": "en-GB,en;q=0.9",
         "rate_xpath": '//*[@id="ctl00_BodyMain_MicroFrontEndControl_pnlContent"]/div[3]/div/div[3]/div[4]/div/div[2]/span',
@@ -619,13 +622,28 @@ def build_app():
 
     @app.get("/")
     def index():
-        return render_template("index.html")
+        markets = [
+            {
+                "code": code,
+                "name": config["name"],
+                "currency": config.get("currency", ""),
+            }
+            for code, config in MARKET_CONFIG.items()
+        ]
+        return render_template("index.html", markets=markets)
 
     @app.get("/api/status")
     def status():
         return jsonify(
             {
                 "poll_interval_seconds": poll_interval_seconds,
+                "market_config": {
+                    code: {
+                        "name": config["name"],
+                        "currency": config.get("currency", ""),
+                    }
+                    for code, config in MARKET_CONFIG.items()
+                },
                 "markets": {
                     code: monitor.snapshot() for code, monitor in monitors.items()
                 },

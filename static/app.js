@@ -20,23 +20,24 @@ function render(data) {
     const updated = document.getElementById('updated');
     const interval = document.getElementById('interval');
     const markets = data.markets || {};
-    const deData = markets.de || null;
-    const ukData = markets.uk || null;
-    const usData = markets.us || null;
-    const updatedText = [
-        deData?.last_checked_local,
-        ukData?.last_checked_local,
-        usData?.last_checked_local,
-    ]
+    const marketConfig = data.market_config || {};
+    const marketCodes = Object.keys(marketConfig).length
+        ? Object.keys(marketConfig)
+        : Object.keys(markets);
+    const updatedText = marketCodes
+        .map((code) => markets[code]?.last_checked_local)
         .filter(Boolean)
         .join(' | ') || '尚未抓取';
 
-    updated.textContent = '最後更新 (DE | UK | US): ' + updatedText;
+    const marketLabel = marketCodes.map((code) => code.toUpperCase()).join(' | ');
+    updated.textContent = `最後更新 (${marketLabel}): ${updatedText}`;
     interval.textContent = '輪詢間隔: ' + data.poll_interval_seconds + ' 秒';
 
-    renderMarket('de', deData);
-    renderMarket('uk', ukData);
-    renderMarket('us', usData);
+    marketCodes.forEach((code) => renderMarket(
+        code,
+        markets[code] || null,
+        marketConfig[code]?.currency || ''
+    ));
     initMobileChartToggles();
 }
 
@@ -47,7 +48,7 @@ function sanitizeForId(text) {
         .replace(/^-+|-+$/g, '');
 }
 
-function renderMarket(marketCode, marketData) {
+function renderMarket(marketCode, marketData, currencyUnit = '') {
     const marketUpdated = document.getElementById(`updated-${marketCode}`);
     const cards = document.getElementById(`cards-${marketCode}`);
 
@@ -58,7 +59,7 @@ function renderMarket(marketCode, marketData) {
     }
 
     marketUpdated.textContent = marketData.last_checked_local || '尚未抓取';
-    const marketAffData = getMarketAffData(marketCode, marketData.results || []);
+    const marketAffData = getMarketAffData(currencyUnit, marketData.results || []);
 
     cards.innerHTML = renderMarketAffCard(
         marketCode,
@@ -90,20 +91,6 @@ function renderMarket(marketCode, marketData) {
             </article>
         `;
     }).join('');
-}
-
-function getCurrencyUnit(marketCode) {
-    const code = String(marketCode || '').toLowerCase();
-    if (code === 'uk') {
-        return '£';
-    }
-    if (code === 'de') {
-        return '€';
-    }
-    if (code === 'us') {
-        return '$';
-    }
-    return '';
 }
 
 function getMarketAffText(results) {
@@ -178,8 +165,7 @@ function getMarketAffHigh(results) {
     return { value: bestValue, time: bestTime || '尚無' };
 }
 
-function getMarketAffData(marketCode, results) {
-    const unit = getCurrencyUnit(marketCode);
+function getMarketAffData(unit, results) {
     const text = getMarketAffText(results);
     const historyPoints = getMarketAffHistoryPoints(results);
     const high = getMarketAffHigh(results);

@@ -3,7 +3,8 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>TopCashback DE / UK / US 監控站</title>
+    {% set market_codes = markets | map(attribute='code') | map('upper') | join(' / ') %}
+    <title>TopCashback {{ market_codes }} 監控站</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
@@ -12,37 +13,23 @@
     <main class="wrap">
         <section class="hero">
             <div class="hero-top">
-                <h1>TopCashback DE / UK / US</h1>
+                <h1>TopCashback {{ market_codes }}</h1>
             </div>
-            <p class="meta" id="updated">雙市場讀取中...</p>
+            <p class="meta" id="updated">市場資料讀取中...</p>
             <p class="meta" id="interval"></p>
         </section>
 
-        <section class="market-panel">
+        {% for market in markets %}
+        <section class="market-panel" data-market-code="{{ market.code }}" data-currency="{{ market.currency }}">
             <div class="market-head">
-                <h2>DE</h2>
-                <p class="meta" id="updated-de"></p>
+                <h2>{{ market.code | upper }}</h2>
+                <p class="meta" id="updated-{{ market.code }}"></p>
             </div>
-            <section id="cards-de" class="grid"></section>
+            <section id="cards-{{ market.code }}" class="grid"></section>
         </section>
-
-        <section class="market-panel">
-            <div class="market-head">
-                <h2>UK</h2>
-                <p class="meta" id="updated-uk"></p>
-            </div>
-            <section id="cards-uk" class="grid"></section>
-        </section>
-
-        <section class="market-panel">
-            <div class="market-head">
-                <h2>US</h2>
-                <p class="meta" id="updated-us"></p>
-            </div>
-            <section id="cards-us" class="grid"></section>
-        </section>
+        {% endfor %}
     </main>
 
-    <script src="{{ url_for('static', filename='app.js', v='20260712-us') }}"></script>
+    <script src="{{ url_for('static', filename='app.js', v='20260715-market-config') }}"></script>
 </body>
 </html>
