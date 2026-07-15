@@ -629,9 +629,6 @@ def build_app():
             time.sleep(monitor.poll_interval_seconds)
 
     for code in MARKET_CONFIG:
-        monitors[code].update(
-            poll_once(clients[code], MARKET_CONFIG[code]["merchants"])
-        )
         threading.Thread(target=worker, args=(code,), daemon=True).start()
 
     app = Flask(__name__)

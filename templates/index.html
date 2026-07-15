@@ -1,35 +1,33 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    {% set market_codes = markets | map(attribute='code') | map('upper') | join(' / ') %}
-    <title>TopCashback {{ market_codes }} 監控站</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TopCashback {{ markets | map(attribute='code') | map('upper') | join(' / ') }} 監控站</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
-    <div class="bg-grid" aria-hidden="true"></div>
-    <div class="bg-glow" aria-hidden="true"></div>
-    <main class="wrap">
-        <section class="hero">
-            <div class="hero-top">
-                <h1>TopCashback {{ market_codes }}</h1>
-            </div>
-            <p class="meta" id="updated">市場資料讀取中...</p>
-            <p class="meta" id="interval"></p>
-        </section>
+<div class="bg-grid" aria-hidden="true"></div>
+<div class="bg-glow" aria-hidden="true"></div>
 
-        {% for market in markets %}
-        <section class="market-panel" data-market-code="{{ market.code }}" data-currency="{{ market.currency }}">
-            <div class="market-head">
-                <h2>{{ market.code | upper }}</h2>
-                <p class="meta" id="updated-{{ market.code }}"></p>
-            </div>
-            <section id="cards-{{ market.code }}" class="grid"></section>
-        </section>
-        {% endfor %}
-    </main>
+<main class="wrap">
+  <section class="hero">
+    <h1>TopCashback {{ markets | map(attribute='code') | map('upper') | join(' / ') }}</h1>
+    <p class="meta" id="updated">市場資料讀取中...</p>
+    <p class="meta" id="interval"></p>
+  </section>
 
-    <script src="{{ url_for('static', filename='app.js', v='20260715-market-config') }}"></script>
+  {% for market in markets %}
+  <section class="market-panel" data-market-code="{{ market.code }}" data-currency="{{ market.currency }}">
+    <div class="market-head">
+      <h2>{{ market.code | upper }}</h2>
+      <p class="meta" id="updated-{{ market.code }}"></p>
+    </div>
+    <section id="cards-{{ market.code }}" class="grid"></section>
+  </section>
+  {% endfor %}
+</main>
+
+<script src="{{ url_for('static', filename='app.js', v='20260715-startup-refresh') }}"></script>
 </body>
 </html>

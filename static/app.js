@@ -1,3 +1,6 @@
+const PAGE_REFRESH_INTERVAL_MS = 60 * 60 * 1000;
+const INITIAL_REFRESH_RETRY_MS = 5000;
+
 function escapeHtml(text) {
     return String(text)
         .replaceAll('&', '&amp;')
@@ -14,11 +17,13 @@ async function loadStatus() {
     }
     const data = await response.json();
     render(data);
+    return Object.values(data.markets || {}).every((market) => (
+        Boolean(market?.last_checked_local)
+    ));
 }
 
 function render(data) {
     const updated = document.getElementById('updated');
-    const interval = document.getElementById('interval');
     const markets = data.markets || {};
     const marketConfig = data.market_config || {};
     const marketCodes = Object.keys(marketConfig).length
@@ -27,11 +32,10 @@ function render(data) {
     const updatedText = marketCodes
         .map((code) => markets[code]?.last_checked_local)
         .filter(Boolean)
-        .join(' | ') || '尚未抓取';
+        .sort()
+        .at(-1) || '尚未抓取';
 
-    const marketLabel = marketCodes.map((code) => code.toUpperCase()).join(' | ');
-    updated.textContent = `最後更新 (${marketLabel}): ${updatedText}`;
-    interval.textContent = '輪詢間隔: ' + data.poll_interval_seconds + ' 秒';
+    updated.textContent = `最後更新：${updatedText} · 每小時更新`;
 
     marketCodes.forEach((code) => renderMarket(
         code,
@@ -49,16 +53,13 @@ function sanitizeForId(text) {
 }
 
 function renderMarket(marketCode, marketData, currencyUnit = '') {
-    const marketUpdated = document.getElementById(`updated-${marketCode}`);
     const cards = document.getElementById(`cards-${marketCode}`);
 
     if (!marketData) {
-        marketUpdated.textContent = '資料不存在';
         cards.innerHTML = `<article class="card"><p class="name">${marketCode.toUpperCase()}</p><p class="rate bad">No Data</p><p class="tiny">後端尚未提供此市場資料</p></article>`;
         return;
     }
 
-    marketUpdated.textContent = marketData.last_checked_local || '尚未抓取';
     const marketAffData = getMarketAffData(currencyUnit, marketData.results || []);
 
     cards.innerHTML = renderMarketAffCard(
@@ -308,12 +309,18 @@ function initMobileChartToggles() {
 }
 
 async function boot() {
+    let nextRefreshMs = PAGE_REFRESH_INTERVAL_MS;
     try {
-        await loadStatus();
+        const initialDataReady = await loadStatus();
+        if (!initialDataReady) {
+            nextRefreshMs = INITIAL_REFRESH_RETRY_MS;
+            document.getElementById('updated').textContent = '啟動完成，資料更新中...';
+        }
     } catch (err) {
+        nextRefreshMs = INITIAL_REFRESH_RETRY_MS;
         document.getElementById('updated').textContent = '讀取失敗，稍後自動重試';
     }
-    setInterval(loadStatus, 30000);
+    setTimeout(boot, nextRefreshMs);
 }
 
 boot();
