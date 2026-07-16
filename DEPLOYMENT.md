@@ -16,7 +16,17 @@ cd /opt/tcb_monitor
 docker compose up -d --build
 ```
 
-商家清單、輪詢間隔、歷史筆數與服務 port 都直接設定在 `topcashbackDE.py`。
+商家與市場清單設定在 `monitoring_config.py`；輪詢間隔、歷史筆數與服務
+port 設定在 `topcashbackDE.py`。
+
+新增 merchant 時，只需在對應市場的 `merchants` 加一筆：
+
+```python
+{"slug": "merchant-url-slug", "name": "顯示名稱"}
+```
+
+`name` 可省略，省略時會直接顯示 `slug`。不同網站的抓取邏輯集中在
+`cashback_clients.py`，目前支援 TopCashback 與 ShopBack。
 
 ## Telegram 變動通知
 

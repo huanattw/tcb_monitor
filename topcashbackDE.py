@@ -1,5 +1,4 @@
 import os
-import importlib
 import logging
 import re
 import sqlite3
@@ -8,12 +7,14 @@ import time
 import urllib.error
 import urllib.parse
 import urllib.request
-from html import escape, unescape
+from html import escape
 from datetime import datetime, timezone
 
 from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request
 
+from cashback_clients import create_client
+from monitoring_config import MARKET_CONFIG
 
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
@@ -29,200 +30,6 @@ HISTORY_LIMIT = 200
 PORT = 5001
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
-
-
-def load_lxml_html_module():
-    try:
-        return importlib.import_module("lxml.html")
-    except ImportError:
-        return None
-
-
-MARKET_CONFIG = {
-    "de": {
-        "name": "TopCashback DE",
-        "currency": "€",
-        "base_url": "https://www.topcashback.de",
-        "accept_language": "de-DE,de;q=0.9,en-US;q=0.8,en;q=0.7",
-        "aff_xpath": '//*[@id="ctl00_ctl29_ctl08_hypMenuItem"]',
-        "merchants": [
-            "cyberghostvpn",
-            "surfshark",
-            "f-secure-internet-security-and-vpn",
-            "nordvpn",
-            "express-vpn",
-            "purevpn",
-        ],
-    },
-    "uk": {
-        "name": "TopCashback UK",
-        "currency": "£",
-        "base_url": "https://www.topcashback.co.uk",
-        "accept_language": "en-GB,en;q=0.9",
-        "rate_xpath": '//*[@id="ctl00_BodyMain_MicroFrontEndControl_pnlContent"]/div[3]/div/div[3]/div[4]/div/div[2]/span',
-        "aff_xpath": '//*[@id="ctl00_ctl29_ctl07_hypMenuItem"]',
-        "merchants": [
-            "cyberghost-vpn",
-            "surfshark",
-            "nordvpn",
-            "expressvpn-uk",
-            "purevpn",
-        ],
-    },
-    "us": {
-        "name": "TopCashback US",
-        "currency": "$",
-        "base_url": "https://www.topcashback.com",
-        "accept_language": "en-GB,en;q=0.9",
-        "rate_xpath": '//*[@id="ctl00_BodyMain_MicroFrontEndControl_pnlContent"]/div[3]/div/div[3]/div[4]/div/div[2]/span',
-        "aff_xpath": [
-            '//*[@id="ctl00_ctl16_ctl07_hypMenuItem"]',
-            '//a[contains(@href, "/account/refer-a-friend/")]',
-        ],
-        "merchants": [
-            "cyberghost-vpn",
-            "surfshark",
-            "expressvpn",
-            "purevpn",
-        ],
-    },
-    "it": {
-        "name": "TopCashback IT",
-        "currency": "€",
-        "base_url": "https://topcashback.it",
-        "accept_language": "en-GB,en;q=0.9",
-        "rate_xpath": '//*[@id="ctl00_BodyMain_MicroFrontEndControl_pnlContent"]/div[3]/div/div[3]/div[4]/div/div[2]/span',
-        "aff_xpath": [
-            '//*[@id="ctl00_ctl15_ctl03_hypMenuItem"]',
-            '//a[contains(@href, "/account/invita-un-amico/")]',
-        ],
-        "merchants": [
-            "cyberghost-vpn",
-            "surfshark",
-            "expressvpn",
-            "purevpn",
-        ],
-    },
-}
-
-
-class TopCashbackClient:
-    def __init__(
-        self,
-        base_url,
-        accept_language,
-        rate_xpath=None,
-        aff_xpath=None,
-        headers=None,
-    ):
-        self.base_url = base_url
-        self.rate_xpath = rate_xpath
-        self.aff_xpath = aff_xpath
-        self.headers = headers or {
-            "User-Agent": (
-                "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-                "AppleWebKit/537.36 (KHTML, like Gecko) "
-                "Chrome/124.0.0.0 Safari/537.36"
-            ),
-            "Accept-Language": accept_language,
-        }
-
-    @staticmethod
-    def _extract_by_regex(html):
-        # Any location has the exactly same tag of cachback rate
-        # It is used when the rate xpath didn't defined or work
-        match = re.search(
-            r'class="merch-cat__rate">\s*(?P<rate>\d+(?:,\d+)?%)\s*<',
-            html,
-            re.DOTALL,
-        )
-        if match:
-            return match.group("rate")
-        return None
-
-    @staticmethod
-    def _extract_by_xpath(html, xpath_expression):
-        if not xpath_expression:
-            return None
-
-        lxml_html_module = load_lxml_html_module()
-        if lxml_html_module is None:
-            return None
-
-        tree = lxml_html_module.fromstring(html)
-        nodes = tree.xpath(xpath_expression)
-        if not nodes:
-            return None
-
-        node = nodes[0]
-        value = node.text_content() if hasattr(node, "text_content") else str(node)
-        value = re.sub(r"\s+", " ", value).strip()
-        return value or None
-
-    @staticmethod
-    def _extract_first_number(text):
-        if not text:
-            return None
-        match = re.search(r"(\d+(?:[\.,]\d+)?)", str(text))
-        if not match:
-            return None
-        return match.group(1).replace(",", ".")
-
-    def _extract_rate(self, html):
-        xpath_rate = self._extract_by_xpath(html, self.rate_xpath)
-        if xpath_rate:
-            return xpath_rate
-
-        regex_rate = self._extract_by_regex(html)
-        if regex_rate:
-            return regex_rate
-
-        return "Not Found"
-
-    def _extract_aff(self, html):
-        xpath_expressions = []
-        if isinstance(self.aff_xpath, (list, tuple)):
-            xpath_expressions = [expr for expr in self.aff_xpath if expr]
-        elif self.aff_xpath:
-            xpath_expressions = [self.aff_xpath]
-
-        for xpath_expression in xpath_expressions:
-            value = self._extract_by_xpath(html, xpath_expression)
-            if value:
-                numeric_value = self._extract_first_number(value)
-                if numeric_value is not None:
-                    return numeric_value
-
-        # Fallback for referral links when IDs or layout change.
-        fallback = re.search(
-            r'href="[^"]*(?:freunde-werben-freunde|tell-a-friend|refer-a-friend|invita-un-amico)[^"]*"[^>]*>(?P<text>.*?)</a>',
-            html,
-            re.IGNORECASE | re.DOTALL,
-        )
-        if fallback:
-            text = re.sub(r"<[^>]+>", "", fallback.group("text"))
-            text = unescape(re.sub(r"\s+", " ", text)).strip()
-            if text:
-                numeric_value = self._extract_first_number(text)
-                if numeric_value is not None:
-                    return numeric_value
-
-        return None
-
-    def get_merchant_data(self, merchant_name):
-        url = f"{self.base_url}/{merchant_name}/"
-        req = urllib.request.Request(url, headers=self.headers)
-
-        with urllib.request.urlopen(req, timeout=20) as response:
-            html = response.read().decode("utf-8", errors="ignore")
-
-        return {
-            "rate": self._extract_rate(html),
-            "aff": self._extract_aff(html),
-        }
-
-    def get_cashback_rate(self, merchant_name):
-        return self.get_merchant_data(merchant_name)["rate"]
 
 
 class MonitorStore:
@@ -605,13 +412,17 @@ class MonitorStore:
 def poll_once(client, merchants):
     checked_at = datetime.now(timezone.utc).isoformat()
     rows = []
-    for merchant in merchants:
-        url = f"{client.base_url}/{merchant}/"
+    for merchant_config in merchants:
+        if isinstance(merchant_config, str):
+            merchant_config = {"slug": merchant_config}
+        merchant_slug = merchant_config["slug"]
+        merchant_name = merchant_config.get("name", merchant_slug)
+        url = client.build_url(merchant_slug)
         try:
-            merchant_data = client.get_merchant_data(merchant)
+            merchant_data = client.get_merchant_data(merchant_slug)
             rows.append(
                 {
-                    "merchant": merchant,
+                    "merchant": merchant_name,
                     "rate": merchant_data.get("rate"),
                     "aff": merchant_data.get("aff"),
                     "error": None,
@@ -620,10 +431,10 @@ def poll_once(client, merchants):
                 }
             )
         except urllib.error.URLError as err:
-            logger.warning("Fetch failed merchant=%s error=%s", merchant, err.reason)
+            logger.warning("Fetch failed merchant=%s error=%s", merchant_name, err.reason)
             rows.append(
                 {
-                    "merchant": merchant,
+                    "merchant": merchant_name,
                     "rate": "N/A",
                     "aff": None,
                     "error": str(err.reason),
@@ -632,10 +443,10 @@ def poll_once(client, merchants):
                 }
             )
         except Exception as err:
-            logger.exception("Unexpected fetch error merchant=%s", merchant)
+            logger.exception("Unexpected fetch error merchant=%s", merchant_name)
             rows.append(
                 {
-                    "merchant": merchant,
+                    "merchant": merchant_name,
                     "rate": "N/A",
                     "aff": None,
                     "error": str(err),
@@ -706,15 +517,7 @@ def build_app():
         )
         for code, config in MARKET_CONFIG.items()
     }
-    clients = {
-        code: TopCashbackClient(
-            base_url=config["base_url"],
-            accept_language=config["accept_language"],
-            rate_xpath=config.get("rate_xpath"),
-            aff_xpath=config.get("aff_xpath"),
-        )
-        for code, config in MARKET_CONFIG.items()
-    }
+    clients = {code: create_client(config) for code, config in MARKET_CONFIG.items()}
 
     def worker(market_code):
         monitor = monitors[market_code]
@@ -780,6 +583,7 @@ def build_app():
                     code: {
                         "name": config["name"],
                         "currency": config.get("currency", ""),
+                        "supports_aff": config.get("supports_aff", True),
                     }
                     for code, config in MARKET_CONFIG.items()
                 },

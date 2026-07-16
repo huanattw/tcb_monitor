@@ -40,7 +40,8 @@ function render(data) {
     marketCodes.forEach((code) => renderMarket(
         code,
         markets[code] || null,
-        marketConfig[code]?.currency || ''
+        marketConfig[code]?.currency || '',
+        marketConfig[code]?.supports_aff !== false
     ));
 }
 
@@ -51,7 +52,7 @@ function sanitizeForId(text) {
         .replace(/^-+|-+$/g, '');
 }
 
-function renderMarket(marketCode, marketData, currencyUnit = '') {
+function renderMarket(marketCode, marketData, currencyUnit = '', supportsAff = true) {
     const cards = document.getElementById(`cards-${marketCode}`);
 
     if (!marketData) {
@@ -61,14 +62,16 @@ function renderMarket(marketCode, marketData, currencyUnit = '') {
 
     const marketAffData = getMarketAffData(currencyUnit, marketData.results || []);
 
-    cards.innerHTML = renderMarketAffCard(
+    const affCard = supportsAff ? renderMarketAffCard(
         marketCode,
         marketAffData.displayValue,
         marketAffData.historyPoints,
         marketAffData.highText,
         marketAffData.highTime,
         marketAffData.unit
-    ) + marketData.results.map((item, index) => {
+    ) : '';
+
+    cards.innerHTML = affCard + marketData.results.map((item, index) => {
         const isError = Boolean(item.error);
         const rateClass = isError ? 'bad' : 'ok';
         const rateText = isError ? '抓取失敗' : item.rate;
