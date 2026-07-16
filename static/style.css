@@ -27,6 +27,46 @@ body {
   margin: 0 auto;
 }
 
+.provider-bar {
+  position: sticky;
+  top: 12px;
+  z-index: 10;
+  display: flex;
+  gap: 4px;
+  width: fit-content;
+  margin: 0 0 28px;
+  padding: 4px;
+  background: rgba(18, 22, 29, 0.94);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+}
+
+.provider-tab {
+  appearance: none;
+  border: 0;
+  padding: 9px 16px;
+  color: var(--muted);
+  background: transparent;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+}
+
+.provider-tab:hover {
+  color: var(--ink);
+}
+
+.provider-tab.active {
+  color: var(--ink);
+  background: #242b38;
+}
+
+.market-panel[hidden] {
+  display: none;
+}
+
 .hero {
   padding: 0 0 28px;
   margin-bottom: 32px;

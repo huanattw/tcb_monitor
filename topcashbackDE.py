@@ -568,6 +568,7 @@ def build_app():
             {
                 "code": code,
                 "name": config["name"],
+                "provider": config.get("provider", "topcashback"),
                 "currency": config.get("currency", ""),
             }
             for code, config in MARKET_CONFIG.items()
@@ -582,6 +583,7 @@ def build_app():
                 "market_config": {
                     code: {
                         "name": config["name"],
+                        "provider": config.get("provider", "topcashback"),
                         "currency": config.get("currency", ""),
                         "supports_aff": config.get("supports_aff", True),
                     }

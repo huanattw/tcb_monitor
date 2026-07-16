@@ -3,24 +3,29 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>TopCashback {{ markets | map(attribute='code') | map('upper') | join(' / ') }} 監控站</title>
-<link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='20260715-dim-chart') }}">
+<title>Cashback 監控站</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css', v='20260716-provider-tabs') }}">
 </head>
 <body>
 <div class="bg-grid" aria-hidden="true"></div>
 <div class="bg-glow" aria-hidden="true"></div>
 
 <main class="wrap">
+  <nav class="provider-bar" aria-label="Cashback 平台">
+    <button class="provider-tab active" type="button" data-provider-tab="topcashback">TopCashback</button>
+    <button class="provider-tab" type="button" data-provider-tab="shopback">ShopBack</button>
+  </nav>
+
   <section class="hero">
-    <h1>TopCashback {{ markets | map(attribute='code') | map('upper') | join(' / ') }}</h1>
+    <h1 id="page-title">TopCashback</h1>
     <p class="meta" id="updated">市場資料讀取中...</p>
     <p class="meta" id="interval"></p>
   </section>
 
   {% for market in markets %}
-  <section class="market-panel" data-market-code="{{ market.code }}" data-currency="{{ market.currency }}">
+  <section class="market-panel" data-market-code="{{ market.code }}" data-provider="{{ market.provider }}" data-currency="{{ market.currency }}">
     <div class="market-head">
-      <h2>{{ market.code | upper }}</h2>
+      <h2>{{ market.name }}</h2>
       <p class="meta" id="updated-{{ market.code }}"></p>
     </div>
     <section id="cards-{{ market.code }}" class="grid"></section>
@@ -28,6 +33,6 @@
   {% endfor %}
 </main>
 
-<script src="{{ url_for('static', filename='app.js', v='20260716-shopback') }}"></script>
+<script src="{{ url_for('static', filename='app.js', v='20260716-provider-tabs') }}"></script>
 </body>
 </html>

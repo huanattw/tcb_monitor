@@ -87,9 +87,22 @@ MARKET_CONFIG = {
         "merchants": [
             {"slug": "surfshark", "name": "Surfshark"},
             {"slug": "nordvpn", "name": "NordVPN"},
-            {"slug":"cyberghost-vpn", "name": "cyberghost-vpn"},
-            {"slug":"expressvpn", "name": "expressvpn"}
-
+            {"slug": "cyberghost-vpn", "name": "CyberGhost VPN"},
+            {"slug": "expressvpn", "name": "ExpressVPN"},
+        ],
+    },
+    "shopback_us": {
+        "name": "ShopBack US",
+        "provider": "shopback",
+        "supports_aff": False,
+        "currency": "$",
+        "base_url": "https://www.shopback.com",
+        "accept_language": "en-US,en;q=0.9",
+        "merchants": [
+            {"slug": "cyberghost-vpn", "name": "CyberGhost VPN"},
+            {"slug": "nordvpn", "name": "NordVPN"},
+            {"slug": "surfshark", "name": "Surfshark"},
+            {"slug": "expressvpn", "name": "ExpressVPN"},
         ],
     },
 }

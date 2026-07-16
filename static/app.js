@@ -1,5 +1,10 @@
 const PAGE_REFRESH_INTERVAL_MS = 60 * 60 * 1000;
 const INITIAL_REFRESH_RETRY_MS = 5000;
+const PROVIDER_NAMES = {
+    topcashback: 'TopCashback',
+    shopback: 'ShopBack',
+};
+let activeProvider = localStorage.getItem('activeProvider') || 'topcashback';
 
 function escapeHtml(text) {
     return String(text)
@@ -43,7 +48,34 @@ function render(data) {
         marketConfig[code]?.currency || '',
         marketConfig[code]?.supports_aff !== false
     ));
+    showProvider(activeProvider);
 }
+
+function showProvider(provider) {
+    if (!PROVIDER_NAMES[provider]) {
+        provider = 'topcashback';
+    }
+    activeProvider = provider;
+    localStorage.setItem('activeProvider', provider);
+
+    document.querySelectorAll('[data-provider-tab]').forEach((button) => {
+        const isActive = button.dataset.providerTab === provider;
+        button.classList.toggle('active', isActive);
+        button.setAttribute('aria-selected', String(isActive));
+    });
+    document.querySelectorAll('.market-panel[data-provider]').forEach((panel) => {
+        panel.hidden = panel.dataset.provider !== provider;
+    });
+
+    const title = document.getElementById('page-title');
+    if (title) {
+        title.textContent = PROVIDER_NAMES[provider];
+    }
+}
+
+document.querySelectorAll('[data-provider-tab]').forEach((button) => {
+    button.addEventListener('click', () => showProvider(button.dataset.providerTab));
+});
 
 function sanitizeForId(text) {
     return String(text || '')
@@ -245,4 +277,5 @@ async function boot() {
     setTimeout(boot, nextRefreshMs);
 }
 
+showProvider(activeProvider);
 boot();
