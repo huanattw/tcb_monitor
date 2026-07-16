@@ -16,7 +16,24 @@ cd /opt/tcb_monitor
 docker compose up -d --build
 ```
 
-商家清單、輪詢間隔、歷史筆數與服務 port 都直接設定在 `topcashbackDE.py`，部署不需要 `.env`。
+商家清單、輪詢間隔、歷史筆數與服務 port 都直接設定在 `topcashbackDE.py`。
+
+## Telegram 變動通知
+
+在 VPS 的部署目錄建立 `.env`（此檔案已被 Git 忽略）：
+
+```env
+TELEGRAM_BOT_TOKEN=123456789:your_bot_token
+TELEGRAM_CHAT_ID=123456789
+```
+
+用 BotFather 建立 Bot 並取得 token，再先傳一則訊息給 Bot，取得個人或群組的 Chat ID。設定後重建容器：
+
+```sh
+docker compose up -d --build
+```
+
+程式會在每次輪詢後比對上一筆有效回饋率；只有數值改變時才會通知，首次沒有歷史資料時不通知。
 
 如果 GitHub repository 是 private，VPS 也需要一把具有此 repository 唯讀權限的 GitHub deploy key，才能在部署時執行 `git fetch`。
 

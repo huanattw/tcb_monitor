@@ -6,4 +6,7 @@ services:
       - "5003:5001"
     volumes:
       - ./history.db:/app/history.db
+    environment:
+      TELEGRAM_BOT_TOKEN: ${TELEGRAM_BOT_TOKEN:-}
+      TELEGRAM_CHAT_ID: ${TELEGRAM_CHAT_ID:-}
     restart: unless-stopped

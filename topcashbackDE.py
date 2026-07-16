@@ -1,20 +1,34 @@
 import os
 import importlib
+import logging
 import re
 import sqlite3
 import threading
 import time
 import urllib.error
+import urllib.parse
 import urllib.request
-from html import unescape
+from html import escape, unescape
 from datetime import datetime, timezone
 
+from dotenv import load_dotenv
 from flask import Flask, jsonify, render_template, request
 
+
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+
+LOG_LEVEL = os.getenv("LOG_LEVEL", "INFO").upper()
+logging.basicConfig(
+    level=getattr(logging, LOG_LEVEL, logging.INFO),
+    format="%(asctime)s %(levelname)s [%(threadName)s] %(message)s",
+)
+logger = logging.getLogger(__name__)
 
 POLL_INTERVAL_SECONDS = 3600
 HISTORY_LIMIT = 200
 PORT = 5001
+TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
 
 
 def load_lxml_html_module():
@@ -468,6 +482,39 @@ class MonitorStore:
 
             self._save_rows_to_db(results)
 
+    def find_rate_changes(self, results):
+        changes = []
+        with self.lock:
+            for item in results:
+                if item.get("error") is not None:
+                    continue
+
+                new_value = self._parse_rate_value(item.get("rate"))
+                if new_value is None:
+                    continue
+
+                merchant = item.get("merchant")
+                previous_rate = None
+                previous_value = None
+                for record in reversed(self.history_by_merchant.get(merchant, [])):
+                    value = self._parse_rate_value(record.get("rate"))
+                    if record.get("error") is None and value is not None:
+                        previous_rate = record.get("rate")
+                        previous_value = value
+                        break
+
+                if previous_value is None or new_value == previous_value:
+                    continue
+
+                changes.append(
+                    {
+                        "merchant": merchant,
+                        "previous_rate": previous_rate,
+                        "new_rate": item.get("rate"),
+                    }
+                )
+        return changes
+
     def snapshot(self):
         with self.lock:
             last_checked_local = (
@@ -573,6 +620,7 @@ def poll_once(client, merchants):
                 }
             )
         except urllib.error.URLError as err:
+            logger.warning("Fetch failed merchant=%s error=%s", merchant, err.reason)
             rows.append(
                 {
                     "merchant": merchant,
@@ -584,6 +632,7 @@ def poll_once(client, merchants):
                 }
             )
         except Exception as err:
+            logger.exception("Unexpected fetch error merchant=%s", merchant)
             rows.append(
                 {
                     "merchant": merchant,
@@ -595,6 +644,53 @@ def poll_once(client, merchants):
                 }
             )
     return rows
+
+
+def send_telegram_rate_changes(market_name, changes):
+    if not changes:
+        return
+    if not TELEGRAM_BOT_TOKEN or not TELEGRAM_CHAT_ID:
+        logger.warning(
+            "Telegram notification skipped market=%s reason=not_configured",
+            market_name,
+        )
+        return
+
+    lines = [f"📈 {market_name} 回饋率變動"]
+    for change in changes:
+        merchant = escape(str(change["merchant"]))
+        previous_rate = escape(str(change["previous_rate"]))
+        new_rate = escape(str(change["new_rate"]))
+        lines.append(
+            f"\n{merchant}  {previous_rate} → <b>{new_rate}</b>"
+        )
+
+    payload = urllib.parse.urlencode(
+        {
+            "chat_id": TELEGRAM_CHAT_ID,
+            "text": "\n".join(lines),
+            "parse_mode": "HTML",
+            "disable_web_page_preview": "true",
+        }
+    ).encode("utf-8")
+    request_data = urllib.request.Request(
+        f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
+        data=payload,
+        method="POST",
+    )
+    try:
+        with urllib.request.urlopen(request_data, timeout=20):
+            logger.info(
+                "Telegram notification sent market=%s changes=%d",
+                market_name,
+                len(changes),
+            )
+    except Exception as err:
+        logger.exception(
+            "Telegram notification failed market=%s error=%s",
+            market_name,
+            err,
+        )
 
 
 def build_app():
@@ -624,14 +720,44 @@ def build_app():
         monitor = monitors[market_code]
         client = clients[market_code]
         merchants = MARKET_CONFIG[market_code]["merchants"]
+        logger.info(
+            "Monitor worker started market=%s merchants=%d interval_seconds=%d",
+            market_code,
+            len(merchants),
+            monitor.poll_interval_seconds,
+        )
         while True:
-            monitor.update(poll_once(client, merchants))
+            started_at = time.monotonic()
+            logger.info("Polling started market=%s", market_code)
+            results = poll_once(client, merchants)
+            changes = monitor.find_rate_changes(results)
+            monitor.update(results)
+            failures = sum(1 for item in results if item.get("error") is not None)
+            logger.info(
+                "Polling completed market=%s results=%d failures=%d changes=%d duration_seconds=%.2f",
+                market_code,
+                len(results),
+                failures,
+                len(changes),
+                time.monotonic() - started_at,
+            )
+            send_telegram_rate_changes(monitor.market_name, changes)
             time.sleep(monitor.poll_interval_seconds)
 
     for code in MARKET_CONFIG:
-        threading.Thread(target=worker, args=(code,), daemon=True).start()
+        threading.Thread(
+            target=worker,
+            args=(code,),
+            daemon=True,
+            name=f"monitor-{code}",
+        ).start()
 
     app = Flask(__name__)
+    logger.info(
+        "Application initialized markets=%d telegram_configured=%s",
+        len(MARKET_CONFIG),
+        bool(TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID),
+    )
 
     @app.get("/")
     def index():
@@ -702,4 +828,5 @@ app = build_app()
 
 
 if __name__ == "__main__":
+    logger.info("Starting web server host=0.0.0.0 port=%d", PORT)
     app.run(host="0.0.0.0", port=PORT, debug=False)
