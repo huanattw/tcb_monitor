@@ -33,9 +33,14 @@ port 設定在 `topcashbackDE.py`。
 在 VPS 的部署目錄建立 `.env`（此檔案已被 Git 忽略）：
 
 ```env
+SESSION_SECRET=replace_with_a_long_random_value
 TELEGRAM_BOT_TOKEN=123456789:your_bot_token
 TELEGRAM_CHAT_ID=123456789
 ```
+
+`SESSION_SECRET` 用來簽署瀏覽器的 HttpOnly session cookie，可用
+`openssl rand -hex 32` 產生。使用者正常開啟首頁後，網頁會自動取得 session；
+未先開啟首頁而直接呼叫 `/api/*` 會收到 `401 Unauthorized`。
 
 用 BotFather 建立 Bot 並取得 token，再先傳一則訊息給 Bot，取得個人或群組的 Chat ID。設定後重建容器：
 

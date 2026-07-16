@@ -1,6 +1,7 @@
 import os
 import logging
 import re
+import secrets
 import sqlite3
 import threading
 import time
@@ -11,7 +12,7 @@ from html import escape
 from datetime import datetime, timezone
 
 from dotenv import load_dotenv
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, render_template, request, session
 
 from cashback_clients import create_client
 from monitoring_config import MARKET_CONFIG
@@ -30,6 +31,7 @@ HISTORY_LIMIT = 200
 PORT = 5001
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
+SESSION_SECRET = os.getenv("SESSION_SECRET", "").strip()
 
 
 class MonitorStore:
@@ -556,14 +558,33 @@ def build_app():
         ).start()
 
     app = Flask(__name__)
+    app.config.update(
+        SECRET_KEY=SESSION_SECRET or secrets.token_hex(32),
+        SESSION_COOKIE_HTTPONLY=True,
+        SESSION_COOKIE_SAMESITE="Strict",
+    )
+    if not SESSION_SECRET:
+        logger.warning(
+            "SESSION_SECRET is not configured; browser sessions will reset on restart"
+        )
     logger.info(
         "Application initialized markets=%d telegram_configured=%s",
         len(MARKET_CONFIG),
         bool(TELEGRAM_BOT_TOKEN and TELEGRAM_CHAT_ID),
     )
 
+    @app.before_request
+    def require_web_session():
+        if not request.path.startswith("/api/"):
+            return None
+
+        if not session.get("web_access"):
+            return jsonify({"error": "Unauthorized"}), 401
+        return None
+
     @app.get("/")
     def index():
+        session["web_access"] = True
         markets = [
             {
                 "code": code,
