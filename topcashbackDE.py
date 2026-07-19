@@ -312,7 +312,11 @@ class MonitorStore:
                         previous_value = value
                         break
 
-                if previous_value is None or new_value == previous_value:
+                if (
+                    previous_value is None
+                    or new_value <= previous_value
+                    or new_value < 100
+                ):
                     continue
 
                 changes.append(

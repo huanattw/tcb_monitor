@@ -48,7 +48,8 @@ TELEGRAM_CHAT_ID=123456789
 docker compose up -d --build
 ```
 
-程式會在每次輪詢後比對上一筆有效回饋率；只有數值改變時才會通知，首次沒有歷史資料時不通知。
+程式會在每次輪詢後比對上一筆有效回饋率；只有回饋率上漲且新回饋率達
+100% 以上時才會通知，首次沒有歷史資料時不通知。
 
 如果 GitHub repository 是 private，VPS 也需要一把具有此 repository 唯讀權限的 GitHub deploy key，才能在部署時執行 `git fetch`。
 
